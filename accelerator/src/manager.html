@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Download Accelerator</title>
+  <link rel="stylesheet" href="manager.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="../icons/icon32.png" alt="" width="20" height="20" />
+      <span>Download Accelerator</span>
+    </div>
+    <div class="dir">
+      <button id="pick-dir" class="btn ghost">Choose save folder</button>
+      <span id="dir-label" class="muted">Not set: chunks will be assembled in memory, then handed to the browser to save</span>
+    </div>
+  </header>
+
+  <section class="settings">
+    <label class="field">
+      <span>Threads</span>
+      <select id="tune-mode">
+        <option value="auto">Auto</option>
+        <option value="fixed">Fixed</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Thread count</span>
+      <input id="concurrency" type="number" min="1" max="32" step="1" />
+    </label>
+    <label class="field">
+      <span>Concurrent downloads</span>
+      <input id="max-tasks" type="number" min="1" max="5" step="1" />
+    </label>
+    <label class="field check">
+      <input id="credentials" type="checkbox" />
+      <span>Use login session (send cookies)</span>
+    </label>
+    <span id="settings-hint" class="muted"></span>
+  </section>
+
+  <section class="add">
+    <textarea id="urls" rows="3" placeholder="Paste download links, separated by spaces, commas or new lines; you can also drag links here"></textarea>
+    <div class="add-actions">
+      <button id="add" class="btn primary">Add &amp; start</button>
+      <button id="clear-done" class="btn ghost">Clear completed</button>
+    </div>
+  </section>
+
+  <section id="tasks" class="tasks"></section>
+  <p id="empty" class="empty">No tasks yet. Paste links and click "Add &amp; start".</p>
+
+  <script type="module" src="manager.js"></script>
+</body>
+</html>

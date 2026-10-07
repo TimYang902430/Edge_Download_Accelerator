@@ -1,0 +1,551 @@
+/* ==========================================================================
+   下载加速器 · 仪表盘风格
+   设计语言：石墨底 + 单一信号色（青柠）+ 等宽数字
+   语义：青柠 =「正在进行 / 已完成」，红 =「失败」，灰 =「排队中」
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  --bg: #f2f0ea;
+  --bg-grid: rgba(20, 23, 28, 0.05);
+  --glow: rgba(122, 156, 0, 0.13);
+
+  --panel: #ffffff;
+  --panel-2: #f8f7f3;
+  --border: #e3e0d8;
+  --border-strong: #cbc6b8;
+
+  --text: #14171c;
+  --muted: #626976;
+
+  /* 信号色：accent 用于描边/文字，signal 用于填充，lift 用于填充的受光面 */
+  --accent: #55770a;
+  --accent-soft: rgba(122, 156, 0, 0.15);
+  --accent-ink: #ffffff;
+  --signal: #7a9c00;
+  --signal-lift: #94b81a;
+  --signal-soft: rgba(122, 156, 0, 0.18);
+
+  --danger: #c2331f;
+  --danger-soft: rgba(194, 51, 31, 0.13);
+  --ok: #55770a;
+
+  --chunk-track: rgba(20, 23, 28, 0.08);
+  --chunk-edge: rgba(20, 23, 28, 0.07);
+  --sheen: rgba(255, 255, 255, 0.6);
+
+  --radius: 14px;
+  --mono: "Cascadia Mono", "Consolas", ui-monospace, "Microsoft YaHei UI",
+    "Microsoft YaHei", monospace;
+  --sans: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI",
+    "Microsoft YaHei", system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --bg: #0c0e12;
+    --bg-grid: rgba(255, 255, 255, 0.04);
+    --glow: rgba(201, 242, 77, 0.1);
+
+    --panel: #14171d;
+    --panel-2: #191d24;
+    --border: #232830;
+    --border-strong: #343b47;
+
+    --text: #e8ebef;
+    --muted: #8b95a3;
+
+    --accent: #c9f24d;
+    --accent-soft: rgba(201, 242, 77, 0.14);
+    --accent-ink: #0e1108;
+    --signal: #c9f24d;
+    --signal-lift: #dcff7a;
+    --signal-soft: rgba(201, 242, 77, 0.22);
+
+    --danger: #ff6b5c;
+    --danger-soft: rgba(255, 107, 92, 0.14);
+    --ok: #c9f24d;
+
+    --chunk-track: rgba(255, 255, 255, 0.06);
+    --chunk-edge: rgba(255, 255, 255, 0.05);
+    --sheen: rgba(255, 255, 255, 0.04);
+  }
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--bg-grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+body {
+  position: relative;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 34px 28px 80px;
+  color: var(--text);
+  caret-color: var(--accent);
+  font: 14px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 顶部一层极淡的信号光晕，制造纵深，不干扰阅读 */
+body::before {
+  content: "";
+  position: fixed;
+  top: -30vh;
+  left: -10vw;
+  width: 70vw;
+  height: 70vh;
+  background: radial-gradient(closest-side, var(--glow), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body > * { position: relative; z-index: 1; }
+
+::selection { background: var(--accent); color: var(--accent-ink); }
+
+/* ---------------------------------------------------------------- 顶栏 */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand { display: flex; align-items: center; gap: 10px; }
+
+.brand img {
+  border-radius: 7px;
+  box-shadow: 0 0 0 1px var(--border), 0 2px 7px rgba(0, 0, 0, 0.14);
+}
+
+.brand span {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+}
+
+.dir {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 320px;
+}
+
+.muted { color: var(--muted); font-size: 12.5px; }
+
+/* ------------------------------------------------------------ 设置区 */
+
+.settings {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.field.check { cursor: pointer; }
+.field.check:hover { color: var(--text); }
+
+input[type="number"],
+select,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 9px;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+input[type="number"] {
+  width: 70px;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+input[type="number"]:disabled { opacity: 0.45; }
+
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--signal-soft);
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* ------------------------------------------------------------ 按钮 */
+
+.btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 15px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s,
+    transform 0.1s, filter 0.15s;
+}
+
+.btn:hover { border-color: var(--border-strong); background: var(--panel-2); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.btn.primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.btn.primary:hover { filter: brightness(1.1); }
+
+.btn.ghost { background: transparent; }
+.btn.ghost:hover { background: var(--panel-2); }
+
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn:disabled:hover { border-color: var(--border); background: transparent; }
+
+/* ------------------------------------------------------------ 添加区 */
+
+.add { padding: 20px 0 4px; }
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 13px 15px;
+  border-radius: 12px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+}
+
+textarea::placeholder {
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 拖拽链接进来时，把落点高亮出来 */
+body.dragging textarea {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 4px var(--signal-soft);
+}
+
+.add-actions { display: flex; gap: 10px; margin-top: 12px; }
+
+/* ------------------------------------------------------------ 任务列表 */
+
+.tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 20px;
+}
+
+.task {
+  position: relative;
+  padding: 15px 18px 15px 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 var(--sheen);
+  overflow: hidden;
+  transition: border-color 0.15s;
+  animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+.task:hover { border-color: var(--border-strong); }
+
+/* 左侧状态导轨：靠 :has() 跟随任务状态变色，无 JS 参与；两端渐隐，避免顶到圆角 */
+.task::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--border-strong);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 14%,
+    #000 86%,
+    transparent
+  );
+  mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent);
+  transition: background 0.2s;
+}
+
+.task:has(.badge:not([hidden]))::before { background: var(--accent); }
+.task:has(.state.ok)::before { background: var(--accent); }
+.task:has(.state.err)::before { background: var(--danger); }
+
+.task-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.task-head .name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  padding: 2px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 6px;
+}
+
+.badge.warn { color: var(--danger); background: var(--danger-soft); }
+
+.state {
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.state.ok { color: var(--accent); }
+.state.err { color: var(--danger); }
+
+.bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+}
+
+/* 上缘受光、下缘压暗的竖向斜面，取代原先零偏移的彩色光晕 */
+.fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(180deg, var(--signal-lift), var(--signal));
+  transition: width 0.2s linear;
+}
+
+/* -------------------------------------------------- 分片方块（视觉主角） */
+
+.chunks { margin-top: 14px; }
+
+.chunks-head {
+  margin-bottom: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chunks-grid { display: flex; flex-wrap: wrap; gap: 3px; }
+
+/* 每块 = 一个分片；左侧青柠部分按 --p 表示该分片自己的进度 */
+.chunk {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    var(--signal) calc(var(--p, 0) * 100%),
+    var(--chunk-track) 0
+  );
+  box-shadow: inset 0 0 0 1px var(--chunk-edge);
+  transition: transform 0.12s ease-out, opacity 0.2s;
+  animation: chunk-in 0.22s ease-out;
+}
+
+/* 已完成的块压暗，形成「亮色波前推过暗色尾迹」的观感 */
+.chunk.done { opacity: 0.34; }
+
+.chunk.failed {
+  background: var(--danger);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+/* 已发出请求但在排队等连接：青柠描边呼吸，和「未开始」的纯灰区分开 */
+.chunk.queued {
+  background: var(--chunk-track);
+  animation: chunk-queued 1.2s ease-in-out infinite;
+}
+
+@keyframes chunk-queued {
+  0%,
+  100% { box-shadow: inset 0 0 0 1px var(--signal); }
+  50% { box-shadow: inset 0 0 0 1px transparent; }
+}
+
+/* 悬停某块时浮出的信息卡 */
+.chunk-tip {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.chunk-tip[hidden] { display: none; }
+.chunk-tip .tip-head { color: var(--text); font-weight: 600; }
+.chunk-tip .tip-state { color: var(--signal); }
+
+.chunk:hover {
+  opacity: 1;
+  transform: scale(1.4);
+  z-index: 2;
+}
+
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.task-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.task-actions .btn {
+  padding: 5px 11px;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+  border-radius: 8px;
+}
+
+.task-actions .btn:hover {
+  color: var(--text);
+  background: var(--panel-2);
+  border-color: var(--border);
+}
+
+/* 破坏性操作在悬停时才显形为危险色，平时保持安静 */
+.task-actions .btn[data-act="cancel"]:hover,
+.task-actions .btn[data-act="remove"]:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: transparent;
+}
+
+/* ------------------------------------------------------------ 错误行 */
+
+.note {
+  margin-top: 12px;
+  padding: 8px 11px;
+  border-radius: 9px;
+  background: var(--danger-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--danger);
+  word-break: break-all;
+}
+
+.empty {
+  padding: 52px 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------ 动效 */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 只动 transform：避免动画的 fill-mode 锁住 opacity，盖掉 .done 的压暗 */
+@keyframes chunk-in {
+  from { transform: scale(0.4); }
+}
+
+/* 窄屏：顶栏与设置项改为堆叠，任务卡收窄内边距 */
+@media (max-width: 620px) {
+  body { padding: 24px 16px 64px; }
+
+  .topbar { gap: 14px; }
+  .dir { flex-basis: 100%; min-width: 0; }
+
+  .settings { gap: 14px 20px; }
+
+  .task { padding: 14px 14px 14px 20px; }
+  .task-actions { gap: 4px; }
+  .task-actions .btn { padding: 5px 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Download Accelerator",
+  "version": "1.0.0",
+  "description": "Splits files into multiple chunks and downloads them in parallel to make full use of your bandwidth.",
+  "minimum_chrome_version": "109",
+  "permissions": ["downloads", "storage", "contextMenus"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Download Accelerator"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
